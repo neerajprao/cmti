@@ -45,7 +45,7 @@
 
   .machine {
     position: relative; z-index: 1;
-    width: 960px;
+    width: 860px;
     background: radial-gradient(ellipse at 50% 30%, rgba(26,18,0,0.97) 0%, rgba(10,8,0,0.98) 70%);
     border: 2px solid #5a3d00;
     border-radius: 18px;
@@ -241,7 +241,7 @@
     border-radius: 3px; box-shadow: 0 0 6px rgba(255,180,0,0.3);
   }
 
-  /* Right area — lever only */
+  /* Right area — spin ball vertical slider with telescopic stick */
   .right-area {
     width: 90px; flex-shrink: 0;
     display: flex; flex-direction: column; gap: 10px; align-items: center;
@@ -251,36 +251,50 @@
     display: flex; flex-direction: column; align-items: center; position: relative;
     height: 200px; cursor: pointer;
   }
-  .lever-track {
-    width: 20px; height: 140px;
-    background: linear-gradient(90deg, #3D2E00, #8B6914, #3D2E00);
-    border-radius: 10px; position: relative;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 0 6px rgba(180,130,0,0.2);
+  .lever-track-vertical {
+    width: 16px; height: 140px;
+    background: linear-gradient(90deg, #151105, #3d2e00, #151105);
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px; position: relative;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8), 0 0 6px rgba(180,130,0,0.2);
+    display: flex; justify-content: center;
   }
-  .lever-arm {
-    position: absolute; width: 8px; height: 90px;
+  .lever-arm-vertical {
+    position: absolute;
+    bottom: 5px; /* emerge from the bottom base */
+    width: 8px;
+    height: 125px; /* normal height, extending to the top */
     background: linear-gradient(90deg, #6B4F10, #D4A017, #F5C842, #D4A017, #6B4F10);
-    border-radius: 4px; left: 6px; top: 8px;
-    transform-origin: 50% 90%;
-    transition: transform 0.25s ease-in-out;
+    border-radius: 4px;
+    transition: height 0.25s cubic-bezier(0.25, 1, 0.5, 1);
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   }
-  .lever-arm.pulled { transform: rotate(38deg); }
+  .lever-arm-vertical.pulled {
+    height: 35px; /* shrinks down when activated */
+  }
   .lever-ball {
-    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-    width: 36px; height: 36px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #FF6666, #CC0000, #660000);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,180,180,0.3);
+    position: absolute;
+    top: -22px; /* center on the tip of the stick */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FF6666, #CC0000, #550000);
+    border: 3.5px solid #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+    cursor: pointer;
     animation: ball-pulse 1.8s ease-in-out infinite;
   }
   @keyframes ball-pulse {
-    0%,100% { box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(0,0,0,0.3), 0 0 10px rgba(255,0,0,0.3); }
-    50% { box-shadow: 0 4px 18px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(0,0,0,0.3), 0 0 22px rgba(255,50,0,0.7); }
+    0%,100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.6), inset 0 2px 5px rgba(255,255,255,0.4); }
+    50% { box-shadow: 0 0 22px rgba(255, 215, 0, 1), inset 0 2px 5px rgba(255,255,255,0.4); }
   }
   .lever-base {
     width: 44px; height: 16px;
     background: linear-gradient(90deg, #3D2E00, #8B6914, #D4A017, #8B6914, #3D2E00);
     border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.5); margin-top: -4px;
+    position: relative; z-index: 5;
   }
   .lever-label {
     font-size: 9px; letter-spacing: 1px; color: var(--gold-mid); margin-top: 6px;
@@ -545,18 +559,8 @@
       </div>
     </div>
 
-    <!-- RIGHT: lever only -->
-    <div class="right-area">
-      <div class="lever-wrap" id="leverWrap" onclick="handleSpin()" title="Pull to spin!">
-        <div class="lever-track">
-          <div class="lever-arm" id="leverArm">
-            <div class="lever-ball"></div>
-          </div>
-        </div>
-        <div class="lever-base"></div>
-      </div>
-      <div class="lever-label">PULL!</div>
-    </div>
+    <!-- Hidden dummy elements to support JS calls without crash -->
+    <div id="leverWrap" style="display: none;"><div id="leverArm"></div></div>
 
   </div><!-- end main-body -->
 
@@ -594,7 +598,7 @@
       </button>
       <button class="btn-secondary" onclick="openPaytable()">PAYTABLE</button>
     </div>
-    <div class="status-msg" id="statusMsg">Pull the lever or press SPIN</div>
+    <div class="status-msg" id="statusMsg">Press SPIN to spin</div>
   </div>
 
 </div><!-- end machine -->
