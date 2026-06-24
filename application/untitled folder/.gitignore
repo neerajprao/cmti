@@ -1,0 +1,11 @@
+# Security keys and environment variables
+.env
+
+# Python caching & environments
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# Game's local quantum cache file
+quantum_cache.json

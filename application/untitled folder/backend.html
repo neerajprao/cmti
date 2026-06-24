@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM Quantum RNG - Backend Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Rajdhani:wght@600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold-light: #FFE066;
+    --gold-mid: #D4A017;
+    --gold-dark: #8B6914;
+    --gold-shine: rgb(255, 245, 176);
+    --red-bright: #E8001E;
+    --bg: #0A0A0A;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    font-family: 'Rajdhani', sans-serif;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0; padding: 0;
+  }
+
+  body {
+    background-image: url('background.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 550px;
+    background: linear-gradient(160deg, #161208 0%, #080603 100%);
+    border: 2px solid var(--gold-mid);
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 0 35px rgba(255, 215, 0, 0.45), 0 0 70px rgba(255, 200, 0, 0.2);
+    text-align: center;
+    user-select: none;
+  }
+
+  .title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 32px; font-weight: 700; letter-spacing: 3px;
+    background: linear-gradient(180deg, #FFF5B0 0%, #FFD700 35%, #B8860B 75%, #FFE066 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(255,200,0,0.5));
+    margin-bottom: 25px;
+    text-transform: uppercase;
+  }
+
+  .stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(212, 160, 23, 0.15);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  .stat-label {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #ccc;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-light);
+    filter: drop-shadow(0 0 4px rgba(255,224,102,0.4));
+  }
+
+  .stat-value.highlight {
+    color: #ff5b5b;
+    filter: drop-shadow(0 0 6px rgba(255,91,91,0.5));
+  }
+
+  .home-btn {
+    display: inline-block;
+    background: linear-gradient(160deg, #2a1f00, #1a1300);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,220,0,0.15);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .home-btn:hover {
+    background: linear-gradient(160deg, #3d2e00, #2a1f00);
+    border-color: var(--gold-light);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  }
+  .home-btn:active {
+    transform: scale(0.98);
+    opacity: 0.85;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="title">⬥ Quantum Backend Stats ⬥</div>
+  
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-label">Cache Balance</span>
+      <span class="stat-value" id="cacheBalance">Loading...</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Spins Until Next API Refill</span>
+      <span class="stat-value highlight" id="roundsUntilRefill">Loading...</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Last API Call Time</span>
+      <span class="stat-value" id="lastApiCall">Loading...</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">IBM Computer Executed</span>
+      <span class="stat-value" id="lastBackendUsed">Loading...</span>
+    </div>
+  </div>
+
+  <a href="double_diamond_slot.html" class="home-btn">Return to Game</a>
+</div>
+
+<script>
+  async function fetchStats() {
+    try {
+      const response = await fetch('/api/backend_stats');
+      const data = await response.json();
+      
+      document.getElementById('cacheBalance').textContent = `${data.remaining_in_cache} rounds`;
+      document.getElementById('roundsUntilRefill').textContent = `${data.rounds_until_refill} spins`;
+      document.getElementById('lastApiCall').textContent = data.last_api_call;
+      document.getElementById('lastBackendUsed').textContent = data.last_backend_used;
+    } catch (e) {
+      console.error('Failed to fetch backend stats:', e);
+      document.getElementById('cacheBalance').textContent = 'Error';
+      document.getElementById('roundsUntilRefill').textContent = 'Offline';
+      document.getElementById('lastApiCall').textContent = 'N/A (Server Offline)';
+      document.getElementById('lastBackendUsed').textContent = 'N/A';
+    }
+  }
+
+  // Fetch immediately
+  fetchStats();
+  // Refresh every 5 seconds
+  setInterval(fetchStats, 5000);
+</script>
+
+</body>
+</html>

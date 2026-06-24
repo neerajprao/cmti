@@ -10,7 +10,7 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --gold-light: #FFE066;
+    --gold-light: #ffe066;
     --gold-mid: #D4A017;
     --gold-dark: #8B6914;
     --gold-shine: rgb(255, 245, 176);
@@ -136,14 +136,15 @@
   }
   .title-icons {
     display: flex; gap: 6px; align-items: center;
-    position: absolute; right: 8px; top: 6px;
+    position: absolute; right: -50px; top: 165px;
   }
   .title-icons button {
-    background: rgba(255,255,255,0.07); border: 1px solid #444; color: #aaa;
-    width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 13px;
-    transition: background 0.2s;
+    background: #000000; border: 1px solid #ffe066; color: #fff;
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 15px;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 8px #ffe066;
   }
-  .title-icons button:hover { background: rgba(255,255,255,0.15); }
+  .title-icons button:hover { background: #b79200; box-shadow: 0 0 14px #ffe066; }
   .title-text {
     font-family: 'Oswald', sans-serif;
     font-size: 40px; font-weight: 700; letter-spacing: 4px;
@@ -603,6 +604,36 @@
   .paytable-top-right:active {
     opacity: 0.85;
   }
+  
+  .backend-btn-right {
+    position: absolute;
+    right: -230px;
+    top: 550px;
+    width: 142px;
+    z-index: 10;
+    transform: scale(1.2);
+    transform-origin: top right;
+    background: linear-gradient(160deg, #2a1f00, #1a1300);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,220,0,0.1);
+    text-align: center;
+  }
+  .backend-btn-right:hover {
+    background: linear-gradient(160deg, #3d2e00, #2a1f00);
+    border-color: var(--gold-light);
+  }
+  .backend-btn-right:active {
+    opacity: 0.85;
+  }
 
   /* Status */
   .status-msg {
@@ -734,7 +765,6 @@
   <div class="title-icons">
     <button title="Sound" id="soundBtn" onclick="toggleSound()">🔊</button>
     <button title="Fullscreen" onclick="toggleFS()">⛶</button>
-    <button title="Paytable" onclick="openPaytable()">☰</button>
   </div>
   <span class="title-text">DOUBLE</span>
   <span class="title-diamonds">◆◆</span>
@@ -819,6 +849,7 @@
       <div class="panel-box-title">AMOUNT WON</div>
       <div class="digital-value" id="winDisplayRight">$0</div>
     </div>
+    <button class="backend-btn-right" onclick="window.location.href='backend.html'">BACKEND</button>
 
     <!-- CENTER -->
     <div class="center-area">
@@ -926,6 +957,58 @@ const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let soundEnabled = true;
 
+const AUDIO_FILES = {
+  win_0: new Audio('0_pay.mp3'),
+  win_med: new Audio('med_pay.mp3'),
+  win_vhigh: new Audio('vhigh_pay.mp3'),
+  win_high: new Audio('high_pay.mp3')
+};
+
+const bgMusic = new Audio('bg.mp3');
+bgMusic.loop = false; // Manually looping to skip the 1st second on loop
+bgMusic.volume = 0.55;
+
+// Loop listener: always skip the first second of the audio when restarting
+bgMusic.addEventListener('ended', function() {
+  bgMusic.currentTime = 1.0;
+  if (soundEnabled) {
+    bgMusic.play().catch(e => {});
+  }
+});
+
+function initAudio() {
+  // Set to 1.0 second initially
+  bgMusic.currentTime = 1.0;
+  
+  // Try to play immediately on load (will succeed if browser has autoplay enabled/permission)
+  if (soundEnabled) {
+    bgMusic.play().catch(e => console.log('Immediate autoplay blocked, waiting for interaction...'));
+  }
+
+  const resume = () => {
+    getAudioCtx();
+    
+    // Play background music starting from 1st second if sound is enabled
+    if (soundEnabled && bgMusic.paused) {
+      bgMusic.currentTime = 1.0;
+      bgMusic.play().catch(e => console.log('bgMusic play error:', e));
+    }
+    
+    // Pre-play / unlock the preloaded audio files
+    Object.values(AUDIO_FILES).forEach(audio => {
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(e => console.log('Audio unlock error:', e));
+    });
+    
+    document.removeEventListener('click', resume);
+    document.removeEventListener('keydown', resume);
+  };
+  document.addEventListener('click', resume);
+  document.addEventListener('keydown', resume);
+}
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new AudioCtx();
   if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -966,22 +1049,25 @@ function playReelStop(reelIdx) {
 
 function playWinSound(payout) {
   if (!soundEnabled) return;
-  let audioFile = '';
+  let audio;
   if (payout === 0) {
-    audioFile = '0_pay.mp3';
+    audio = AUDIO_FILES.win_0;
   } else if (payout < 100) {
-    audioFile = 'med_pay.mp3';
+    audio = AUDIO_FILES.win_med;
   } else if (payout < 300) {
-    audioFile = 'vhigh_pay.mp3';
+    audio = AUDIO_FILES.win_vhigh;
   } else {
-    audioFile = 'high_pay.mp3';
+    audio = AUDIO_FILES.win_high;
   }
-  const audio = new Audio(audioFile);
-  audio.play().catch(e => console.log('Audio play error:', e));
-  setTimeout(() => {
-    audio.pause();
+  
+  if (audio) {
     audio.currentTime = 0;
-  }, 3000);
+    audio.play().catch(e => console.log('Audio play error:', e));
+    setTimeout(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }, 3000);
+  }
 }
 
 function playCoinSound() {
@@ -1279,7 +1365,7 @@ function animateReelSpin(reelIdx, finalSymbols, delay, onDone) {
 }
 
 // ─── SPIN LOGIC ──────────────────────────────────────────────────────────
-function handleSpin() {
+async function handleSpin() {
   if (isSpinning) return;
   // Unlock audio on first interaction
   getAudioCtx();
@@ -1309,8 +1395,18 @@ function handleSpin() {
   lever.classList.add('pulled');
   setTimeout(()=>lever.classList.remove('pulled'), 600);
 
-  // Pick outcome
-  const pick = PAYOUTS[Math.floor(Math.random()*PAYOUTS.length)];
+  // Pick outcome from Quantum RNG API
+  let pick;
+  try {
+    const response = await fetch('/api/spin');
+    const data = await response.json();
+    pick = PAYOUTS[data.outcome_index];
+    console.log(`Spin outcome source: ${data.source}. Remaining in cache: ${data.remaining_in_cache}`);
+  } catch (e) {
+    console.error('Failed to fetch from API, falling back to local math:', e);
+    pick = PAYOUTS[Math.floor(Math.random()*PAYOUTS.length)];
+  }
+  
   const landed = [pick.r1, pick.r2, pick.r3];
 
   const finalStrips = landed.map(sym=>[
@@ -1380,7 +1476,18 @@ function onAllStopped(pick) {
 function toggleSound() {
   soundEnabled=!soundEnabled;
   document.getElementById('soundBtn').textContent=soundEnabled?'🔊':'🔇';
-  playClickSound();
+  getAudioCtx();
+  
+  if (soundEnabled) {
+    bgMusic.play().catch(e => console.log('bgMusic play error:', e));
+    playClickSound();
+  } else {
+    bgMusic.pause();
+    Object.values(AUDIO_FILES).forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  }
 }
 function toggleFS() {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen();
@@ -1404,6 +1511,7 @@ function init() {
   document.getElementById('betBtnImg').src = IMGS.bet_btn;
   document.getElementById('betmaxBtnImg').src = IMGS.betmax_btn;
 
+  initAudio(); // Set up background audio preloading and user interaction unlocking
   updateDynamicReelSizes();
   initReels();
   initWinners();
